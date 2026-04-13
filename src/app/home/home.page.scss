@@ -70,6 +70,11 @@ h2 {
   flex-wrap: wrap;
 }
 
+.mode-segment {
+  margin: 0.7rem 0 0.85rem;
+  --background: color-mix(in srgb, var(--panel) 92%, transparent);
+}
+
 .category-list {
   margin-bottom: 0.6rem;
 }
@@ -135,6 +140,30 @@ ion-item {
   margin: 0 0 0.5rem;
   font-size: 0.8rem;
   opacity: 0.7;
+}
+
+.shopping-row {
+  margin-bottom: 0.3rem;
+}
+
+.shopping-item {
+  --background: color-mix(in srgb, var(--panel) 96%, white 4%);
+}
+
+.crossed {
+  text-decoration: line-through;
+  opacity: 0.65;
+}
+
+.finance-editor-wrap {
+  --padding-start: 0.7rem;
+  --padding-end: 0.7rem;
+}
+
+.finance-editor {
+  min-height: 280px;
+  --padding-top: 0.9rem;
+  --padding-bottom: 0.9rem;
 }
 
 .task-item {

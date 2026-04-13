@@ -16,6 +16,13 @@
       </ion-button>
     </div>
     <h1>Ordena tu dia por contexto</h1>
+
+    <ion-segment [(ngModel)]="selectedMode" class="mode-segment">
+      <ion-segment-button *ngFor="let mode of modeOptions" [value]="mode.id">
+        <ion-label>{{ mode.label }}</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+
     <div class="chips">
       <ion-chip>
         <ion-label>Abiertas: {{ openTasksCount }}</ion-label>
@@ -26,148 +33,206 @@
     </div>
   </section>
 
-  <section class="panel ion-padding md:mx-auto md:max-w-4xl">
-    <h2>Capturar tarea</h2>
+  <ng-container *ngIf="selectedMode === 'gtd'">
 
-    <ion-item lines="none">
-      <ion-input label="Tarea" labelPlacement="stacked" placeholder="Ej: Preparar reporte mensual"
-        [(ngModel)]="draft.title"></ion-input>
-    </ion-item>
+    <section class="panel ion-padding md:mx-auto md:max-w-4xl">
+      <h2>Capturar tarea</h2>
 
-    <ion-item lines="none">
-      <ion-textarea label="Notas" labelPlacement="stacked" placeholder="Detalles breves" autoGrow="true"
-        [(ngModel)]="draft.notes"></ion-textarea>
-    </ion-item>
-
-    <div class="row">
       <ion-item lines="none">
-        <ion-select label="Categoria" labelPlacement="stacked" interface="popover" [(ngModel)]="draft.categoryId">
-          <ion-select-option *ngFor="let category of categories" [value]="category.id">
-            {{ category.label }}
-          </ion-select-option>
-        </ion-select>
+        <ion-input label="Tarea" labelPlacement="stacked" placeholder="Ej: Preparar reporte mensual"
+          [(ngModel)]="draft.title"></ion-input>
       </ion-item>
 
       <ion-item lines="none">
-        <ion-select label="Etapa GTD" labelPlacement="stacked" interface="popover" [(ngModel)]="draft.stage">
-          <ion-select-option *ngFor="let stage of stages" [value]="stage.id">
-            {{ stage.label }}
-          </ion-select-option>
-        </ion-select>
-      </ion-item>
-    </div>
-
-    <ion-button expand="block" class="add-btn" (click)="addTask()" [disabled]="!draft.title.trim()">
-      Agregar tarea
-    </ion-button>
-  </section>
-
-  <section class="panel ion-padding md:mx-auto md:max-w-4xl">
-    <h2>Categorias personalizadas</h2>
-
-    <div class="chips category-list">
-      <ion-chip *ngFor="let category of categories" [style.background]="category.color" class="cat-chip">
-        <ion-icon [name]="category.icon"></ion-icon>
-        <ion-label>{{ category.label }}</ion-label>
-      </ion-chip>
-    </div>
-
-    <div class="row">
-      <ion-item lines="none">
-        <ion-input label="Nueva categoria" labelPlacement="stacked" placeholder="Ej: Finanzas"
-          [(ngModel)]="categoryDraft.label"></ion-input>
+        <ion-textarea label="Notas" labelPlacement="stacked" placeholder="Detalles breves" autoGrow="true"
+          [(ngModel)]="draft.notes"></ion-textarea>
       </ion-item>
 
-      <ion-item lines="none">
-        <ion-select label="Color" labelPlacement="stacked" interface="popover" [(ngModel)]="categoryDraft.color">
-          <ion-select-option *ngFor="let color of colorOptions" [value]="color">
-            {{ color }}
-          </ion-select-option>
-        </ion-select>
-      </ion-item>
-    </div>
+      <div class="row">
+        <ion-item lines="none">
+          <ion-select label="Categoria" labelPlacement="stacked" interface="popover" [(ngModel)]="draft.categoryId">
+            <ion-select-option *ngFor="let category of categories" [value]="category.id">
+              {{ category.label }}
+            </ion-select-option>
+          </ion-select>
+        </ion-item>
 
-    <ion-item lines="none">
-      <ion-select label="Icono" labelPlacement="stacked" interface="popover" [(ngModel)]="categoryDraft.icon">
-        <ion-select-option *ngFor="let icon of iconOptions" [value]="icon">{{ icon }}</ion-select-option>
-      </ion-select>
-    </ion-item>
-
-    <ion-button expand="block" fill="outline" (click)="addCategory()" [disabled]="!categoryDraft.label.trim()">
-      Crear categoria
-    </ion-button>
-  </section>
-
-  <section class="panel ion-padding md:mx-auto md:max-w-4xl">
-    <h2>Filtrar por etapa</h2>
-
-    <div class="row">
-      <ion-item lines="none">
-        <ion-select label="Etapa" labelPlacement="stacked" interface="popover" [(ngModel)]="filterStage">
-          <ion-select-option value="all">Todas</ion-select-option>
-          <ion-select-option *ngFor="let stage of stages" [value]="stage.id">
-            {{ stage.label }}
-          </ion-select-option>
-        </ion-select>
-      </ion-item>
-    </div>
-  </section>
-
-  <section class="panel panel-list ion-padding md:mx-auto md:max-w-4xl" (touchstart)="onTaskListTouchStart($event)"
-    (touchend)="onTaskListTouchEnd($event)">
-    <h2>Tareas</h2>
-
-    <div class="view-nav">
-      <ion-button fill="clear" size="small" (click)="goPreviousCategoryView()"
-        [disabled]="activeCategoryViewIndex === 0">
-        <ion-icon name="chevron-back-outline"></ion-icon>
-      </ion-button>
-
-      <ion-chip class="active-view" [style.background]="activeCategoryView.color">
-        <ion-label>{{ activeCategoryView.label }}</ion-label>
-      </ion-chip>
-
-      <ion-button fill="clear" size="small" (click)="goNextCategoryView()"
-        [disabled]="activeCategoryViewIndex >= categoryViews.length - 1">
-        <ion-icon name="chevron-forward-outline"></ion-icon>
-      </ion-button>
-    </div>
-
-    <p class="swipe-hint">Desliza a la derecha para ir a la siguiente categoria. Desliza a la izquierda para volver.</p>
-
-    <ion-list lines="none" *ngIf="filteredTasks.length; else emptyState">
-      <ion-item-sliding *ngFor="let task of filteredTasks; trackBy: trackByTaskId">
-        <ion-item class="task-item" [style.--task-accent]="getCategory(task).color">
-          <ion-label>
-            <div class="task-top">
-              <ion-icon [name]="getCategory(task).icon" [style.color]="getCategory(task).color"></ion-icon>
-              <h3>{{ task.title }}</h3>
-            </div>
-            <p class="meta">{{ getCategory(task).label }} | {{ getStageLabel(task.stage) }}</p>
-            <p *ngIf="task.notes">{{ task.notes }}</p>
-          </ion-label>
-
-          <ion-select interface="popover" [value]="task.stage"
-            (ionChange)="updateStage(task, $any($event.detail.value))">
+        <ion-item lines="none">
+          <ion-select label="Etapa GTD" labelPlacement="stacked" interface="popover" [(ngModel)]="draft.stage">
             <ion-select-option *ngFor="let stage of stages" [value]="stage.id">
               {{ stage.label }}
             </ion-select-option>
           </ion-select>
         </ion-item>
-
-        <ion-item-options side="end">
-          <ion-item-option color="danger" (click)="removeTask(task.id)">
-            Eliminar
-          </ion-item-option>
-        </ion-item-options>
-      </ion-item-sliding>
-    </ion-list>
-
-    <ng-template #emptyState>
-      <div class="empty-state">
-        <ion-icon name="sparkles-outline"></ion-icon>
-        <p>No hay tareas con los filtros actuales.</p>
       </div>
-    </ng-template>
-  </section>
+
+      <ion-button expand="block" class="add-btn" (click)="addTask()" [disabled]="!draft.title.trim()">
+        Agregar tarea
+      </ion-button>
+    </section>
+
+    <section class="panel ion-padding md:mx-auto md:max-w-4xl">
+      <h2>Categorias personalizadas</h2>
+
+      <div class="chips category-list">
+        <ion-chip *ngFor="let category of categories" [style.background]="category.color" class="cat-chip">
+          <ion-icon [name]="category.icon"></ion-icon>
+          <ion-label>{{ category.label }}</ion-label>
+        </ion-chip>
+      </div>
+
+      <div class="row">
+        <ion-item lines="none">
+          <ion-input label="Nueva categoria" labelPlacement="stacked" placeholder="Ej: Finanzas"
+            [(ngModel)]="categoryDraft.label"></ion-input>
+        </ion-item>
+
+        <ion-item lines="none">
+          <ion-select label="Color" labelPlacement="stacked" interface="popover" [(ngModel)]="categoryDraft.color">
+            <ion-select-option *ngFor="let color of colorOptions" [value]="color">
+              {{ color }}
+            </ion-select-option>
+          </ion-select>
+        </ion-item>
+      </div>
+
+      <ion-item lines="none">
+        <ion-select label="Icono" labelPlacement="stacked" interface="popover" [(ngModel)]="categoryDraft.icon">
+          <ion-select-option *ngFor="let icon of iconOptions" [value]="icon">{{ icon }}</ion-select-option>
+        </ion-select>
+      </ion-item>
+
+      <ion-button expand="block" fill="outline" (click)="addCategory()" [disabled]="!categoryDraft.label.trim()">
+        Crear categoria
+      </ion-button>
+    </section>
+
+    <section class="panel ion-padding md:mx-auto md:max-w-4xl">
+      <h2>Filtrar por etapa</h2>
+
+      <div class="row">
+        <ion-item lines="none">
+          <ion-select label="Etapa" labelPlacement="stacked" interface="popover" [(ngModel)]="filterStage">
+            <ion-select-option value="all">Todas</ion-select-option>
+            <ion-select-option *ngFor="let stage of stages" [value]="stage.id">
+              {{ stage.label }}
+            </ion-select-option>
+          </ion-select>
+        </ion-item>
+      </div>
+    </section>
+
+    <section class="panel panel-list ion-padding md:mx-auto md:max-w-4xl" (touchstart)="onTaskListTouchStart($event)"
+      (touchend)="onTaskListTouchEnd($event)">
+      <h2>Tareas</h2>
+
+      <div class="view-nav">
+        <ion-button fill="clear" size="small" (click)="goPreviousCategoryView()"
+          [disabled]="activeCategoryViewIndex === 0">
+          <ion-icon name="chevron-back-outline"></ion-icon>
+        </ion-button>
+
+        <ion-chip class="active-view" [style.background]="activeCategoryView.color">
+          <ion-label>{{ activeCategoryView.label }}</ion-label>
+        </ion-chip>
+
+        <ion-button fill="clear" size="small" (click)="goNextCategoryView()"
+          [disabled]="activeCategoryViewIndex >= categoryViews.length - 1">
+          <ion-icon name="chevron-forward-outline"></ion-icon>
+        </ion-button>
+      </div>
+
+      <p class="swipe-hint">Desliza a la derecha para ir a la siguiente categoria. Desliza a la izquierda para volver.
+      </p>
+
+      <ion-list lines="none" *ngIf="filteredTasks.length; else emptyState">
+        <ion-item-sliding *ngFor="let task of filteredTasks; trackBy: trackByTaskId">
+          <ion-item class="task-item" [style.--task-accent]="getCategory(task).color">
+            <ion-label>
+              <div class="task-top">
+                <ion-icon [name]="getCategory(task).icon" [style.color]="getCategory(task).color"></ion-icon>
+                <h3>{{ task.title }}</h3>
+              </div>
+              <p class="meta">{{ getCategory(task).label }} | {{ getStageLabel(task.stage) }}</p>
+              <p *ngIf="task.notes">{{ task.notes }}</p>
+            </ion-label>
+
+            <ion-select interface="popover" [value]="task.stage"
+              (ionChange)="updateStage(task, $any($event.detail.value))">
+              <ion-select-option *ngFor="let stage of stages" [value]="stage.id">
+                {{ stage.label }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <ion-item-options side="end">
+            <ion-item-option color="danger" (click)="removeTask(task.id)">
+              Eliminar
+            </ion-item-option>
+          </ion-item-options>
+        </ion-item-sliding>
+      </ion-list>
+
+      <ng-template #emptyState>
+        <div class="empty-state">
+          <ion-icon name="sparkles-outline"></ion-icon>
+          <p>No hay tareas con los filtros actuales.</p>
+        </div>
+      </ng-template>
+    </section>
+  </ng-container>
+
+  <ng-container *ngIf="selectedMode === 'shopping'">
+    <section class="panel ion-padding md:mx-auto md:max-w-4xl">
+      <h2>Lista de compras supermercado</h2>
+
+      <div class="row shopping-row">
+        <ion-item lines="none">
+          <ion-input label="Producto" labelPlacement="stacked" placeholder="Ej: Leche"
+            [(ngModel)]="shoppingDraft.name"></ion-input>
+        </ion-item>
+
+        <ion-item lines="none">
+          <ion-input type="number" min="1" label="Cantidad" labelPlacement="stacked"
+            [(ngModel)]="shoppingDraft.quantity"></ion-input>
+        </ion-item>
+      </div>
+
+      <ion-button expand="block" class="add-btn" (click)="addShoppingItem()" [disabled]="!shoppingDraft.name.trim()">
+        Agregar a compras
+      </ion-button>
+
+      <ion-list lines="none" *ngIf="shoppingItems.length; else emptyShopping">
+        <ion-item class="shopping-item" *ngFor="let item of shoppingItems; trackBy: trackByShoppingId">
+          <ion-checkbox slot="start" [checked]="item.checked" (ionChange)="toggleShoppingItem(item.id)"></ion-checkbox>
+          <ion-label [class.crossed]="item.checked">
+            {{ item.name }} ({{ item.quantity }})
+          </ion-label>
+          <ion-button fill="clear" color="danger" size="small" (click)="removeShoppingItem(item.id)">
+            <ion-icon name="trash-outline"></ion-icon>
+          </ion-button>
+        </ion-item>
+      </ion-list>
+
+      <ng-template #emptyShopping>
+        <div class="empty-state">
+          <ion-icon name="cart-outline"></ion-icon>
+          <p>No hay productos en la lista.</p>
+        </div>
+      </ng-template>
+    </section>
+  </ng-container>
+
+  <ng-container *ngIf="selectedMode === 'finance'">
+    <section class="panel ion-padding md:mx-auto md:max-w-4xl">
+      <h2>Finanzas</h2>
+      <p class="swipe-hint">Espacio de texto libre para notas de finanzas.</p>
+
+      <ion-item lines="none" class="finance-editor-wrap">
+        <ion-textarea class="finance-editor" autoGrow="true"
+          placeholder="Escribe aqui tu control financiero, presupuesto, deudas, ingresos, etc."
+          [(ngModel)]="financeText" (ngModelChange)="updateFinanceText($event)"></ion-textarea>
+      </ion-item>
+    </section>
+  </ng-container>
 </ion-content>

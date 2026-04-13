@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 
+type AppMode = 'gtd' | 'shopping' | 'finance';
 type GtdStage = 'inbox' | 'next' | 'waiting' | 'scheduled' | 'someday' | 'done';
 type TaskCategoryId = string;
 
@@ -39,6 +40,18 @@ interface CategoryView {
   color: string;
 }
 
+interface ShoppingItem {
+  id: string;
+  name: string;
+  quantity: number;
+  checked: boolean;
+}
+
+interface ShoppingDraft {
+  name: string;
+  quantity: number;
+}
+
 @Component({
   selector: 'app-home',
   templateUrl: 'home.page.html',
@@ -48,6 +61,8 @@ interface CategoryView {
 export class HomePage {
   private readonly storageKey = 'gtd.memo.tasks.v1';
   private readonly categoryStorageKey = 'gtd.memo.categories.v1';
+  private readonly shoppingStorageKey = 'gtd.memo.shopping.v1';
+  private readonly financeStorageKey = 'gtd.memo.finance.v1';
   private readonly themeStorageKey = 'gtd.memo.theme.v1';
   private touchStartX = 0;
   private touchStartY = 0;
@@ -76,6 +91,17 @@ export class HomePage {
   ];
 
   tasks: TaskItem[] = [];
+  shoppingItems: ShoppingItem[] = [];
+  financeText = '';
+
+  modeOptions: { id: AppMode; label: string }[] = [
+    { id: 'gtd', label: 'GTD' },
+    { id: 'shopping', label: 'Compras' },
+    { id: 'finance', label: 'Finanzas' },
+  ];
+
+  selectedMode: AppMode = 'gtd';
+
   filterStage: 'all' | GtdStage = 'all';
   activeCategoryViewIndex = 0;
   isDarkMode = false;
@@ -93,10 +119,17 @@ export class HomePage {
     icon: 'construct-outline',
   };
 
+  shoppingDraft: ShoppingDraft = {
+    name: '',
+    quantity: 1,
+  };
+
   constructor() {
     this.initThemeState();
     this.loadCategories();
     this.loadTasks();
+    this.loadShoppingItems();
+    this.loadFinanceText();
     this.normalizeTaskCategories();
     this.ensureDraftCategory();
   }
@@ -195,6 +228,47 @@ export class HomePage {
     this.draft.stage = 'inbox';
   }
 
+  addShoppingItem(): void {
+    const name = this.shoppingDraft.name.trim();
+    if (!name) {
+      return;
+    }
+
+    const item: ShoppingItem = {
+      id: crypto.randomUUID(),
+      name,
+      quantity: Math.max(1, Number(this.shoppingDraft.quantity) || 1),
+      checked: false,
+    };
+
+    this.shoppingItems = [item, ...this.shoppingItems];
+    this.shoppingDraft.name = '';
+    this.shoppingDraft.quantity = 1;
+    this.saveShoppingItems();
+  }
+
+  toggleShoppingItem(itemId: string): void {
+    this.shoppingItems = this.shoppingItems.map((item) =>
+      item.id === itemId
+        ? {
+          ...item,
+          checked: !item.checked,
+        }
+        : item,
+    );
+    this.saveShoppingItems();
+  }
+
+  removeShoppingItem(itemId: string): void {
+    this.shoppingItems = this.shoppingItems.filter((item) => item.id !== itemId);
+    this.saveShoppingItems();
+  }
+
+  updateFinanceText(value: string | null | undefined): void {
+    this.financeText = value ?? '';
+    this.saveFinanceText();
+  }
+
   updateStage(task: TaskItem, stage: GtdStage): void {
     if (task.stage === stage) {
       return;
@@ -263,6 +337,10 @@ export class HomePage {
 
   trackByTaskId(_index: number, task: TaskItem): string {
     return task.id;
+  }
+
+  trackByShoppingId(_index: number, item: ShoppingItem): string {
+    return item.id;
   }
 
   private loadTasks(): void {
@@ -334,6 +412,44 @@ export class HomePage {
 
   private saveTasks(): void {
     localStorage.setItem(this.storageKey, JSON.stringify(this.tasks));
+  }
+
+  private loadShoppingItems(): void {
+    const raw = localStorage.getItem(this.shoppingStorageKey);
+    if (!raw) {
+      this.shoppingItems = [];
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(raw) as ShoppingItem[];
+      if (!Array.isArray(parsed)) {
+        this.shoppingItems = [];
+        return;
+      }
+
+      this.shoppingItems = parsed
+        .filter((item) => !!item?.id && !!item?.name)
+        .map((item) => ({
+          ...item,
+          quantity: Math.max(1, Number(item.quantity) || 1),
+          checked: !!item.checked,
+        }));
+    } catch {
+      this.shoppingItems = [];
+    }
+  }
+
+  private saveShoppingItems(): void {
+    localStorage.setItem(this.shoppingStorageKey, JSON.stringify(this.shoppingItems));
+  }
+
+  private loadFinanceText(): void {
+    this.financeText = localStorage.getItem(this.financeStorageKey) ?? '';
+  }
+
+  private saveFinanceText(): void {
+    localStorage.setItem(this.financeStorageKey, this.financeText);
   }
 
   private saveCategories(): void {
