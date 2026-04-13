@@ -1,0 +1,19 @@
+// For information on how to create your own theme, please refer to:
+// https://ionicframework.com/docs/theming/
+
+:root {
+	--gtd-bg: #f7f4ec;
+	--gtd-ink: #162028;
+	--gtd-panel: rgba(255, 255, 255, 0.84);
+	--gtd-item: rgba(255, 255, 255, 0.72);
+	--gtd-border: rgba(22, 32, 40, 0.08);
+}
+
+:root.dark,
+:root.ion-palette-dark {
+	--gtd-bg: #0f1722;
+	--gtd-ink: #e7edf5;
+	--gtd-panel: rgba(18, 28, 42, 0.9);
+	--gtd-item: rgba(30, 42, 61, 0.85);
+	--gtd-border: rgba(164, 188, 216, 0.18);
+}

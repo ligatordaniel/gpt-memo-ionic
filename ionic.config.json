@@ -1,0 +1,7 @@
+{
+  "name": "gtd-memo-ionic",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular"
+}
